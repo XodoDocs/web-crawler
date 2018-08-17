@@ -5,10 +5,8 @@ class Crawler {
   constructor(options = {}) {
     this._debug = options.debug || false;
     this._maxConnections = options.maxConnections || 10;
-    this._getHTML = options.getHTML || false;
 
     this._callbacks = {
-      success: null,
       done: null,
       fetched: null,
       foundURL: null
@@ -24,9 +22,6 @@ class Crawler {
 
   on = (key, func) => {
     switch (key) {
-      case 'success':
-        this._callbacks.success = func;
-        break;
       case 'done':
         this._callbacks.done = func;
         break;

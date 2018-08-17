@@ -4,7 +4,7 @@ A simple NodeJS web crawler that actually executes JS!
 
 ## Usage
 
-### Constructor
+### constructor(options)
 
 ```js
 const c = new Crawler(options);

@@ -4,7 +4,7 @@ class Crawler {
 
   constructor(options = {}) {
     this._debug = options.debug || false;
-    this._maxConnections = options.maxConnections || 50;
+    this._maxConnections = options.maxConnections || 10;
     this._getHTML = options.getHTML || false;
 
     this._callbacks = {
@@ -16,6 +16,7 @@ class Crawler {
 
     this._data = {};
     this._queue = [];
+    this._seen = []
     this._pageCount = 0;
 
     this._shouldFetch = () => true;
@@ -51,7 +52,7 @@ class Crawler {
 
   _fetchPage = async (url) => {
 
-    if (this.debug) {
+    if (this._debug) {
       console.log(`Fetching ${url}`);
     }
 
@@ -63,7 +64,12 @@ class Crawler {
 
     const hrefs = await this._findLinks(page);
 
-    const html = await page.content();
+    let html = null;
+
+    // we only need the HTML if the user is requesting it in a callback
+    if (this._callbacks.done || this._callbacks.fetched) {
+      html = await page.content();
+    }
     
     let o = { url, html };
 
@@ -75,23 +81,41 @@ class Crawler {
 
     hrefs.forEach(href => this.queue(href));
 
-    this._pageCount--;
-    this._getNext();
-  }
+    await page.close();
 
-  _getNext = () => {
-    if (this._queue.length === 0) {
+    this._pageCount--;
+    this._flush();
+  }
+  
+  _flush = () => {
+    // if (this._queue.length === 0) {
+    //   this._done();
+    //   return;
+    // }
+
+    let diff = this._maxConnections - this._pageCount;
+
+    if (diff > this._queue.length) {
+      diff = this._queue.length;
+    }
+
+
+    if (this._queue.length === 0 && this._pageCount === 0) {
       this._done();
       return;
     }
 
-    if (this._pageCount < this._maxConnections) {
+    for (let i = 0; i < diff; i++) {
       const url = this._queue.pop();
+      this._seen.push(url);
       this._fetchPage(url);
     }
   }
 
   _done = () => {
+
+    this._browser.close();
+
     if (this._callbacks.done) {
       this._callbacks.done(this._data);
     }
@@ -112,10 +136,11 @@ class Crawler {
   queue = (url) => {
     if (
       this._queue.indexOf(url) === -1 &&
+      this._seen.indexOf(url) === -1 &&
       this._getFetchedURLs().indexOf(url) === -1 &&
       this._shouldFetch(url)
     ) {
-      if (this.debug) {
+      if (this._debug) {
         console.log(`Queueing ${url}`);
       }
 
@@ -132,10 +157,7 @@ class Crawler {
     if (this._queue.length === 0) return;
 
     this._browser = await Puppeteer.launch();
-
-    for (let i = 0; i < this._queue.length; i++) {
-      this._getNext();
-    }
+    this._flush();
   }
 }
 

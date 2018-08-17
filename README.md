@@ -2,6 +2,8 @@
 
 A simple NodeJS web crawler that actually executes JS!
 
+**BETA** - Not for production use
+
 ## Usage
 
 ### constructor(options)
@@ -38,7 +40,7 @@ Attach an event listener to the instance.
 ## Example
 
 ```js
-const Crawler = require('this_module');
+const Crawler = require('@pdftron/web-crawler');
 
 const c = new Crawler({ debug: false });
 

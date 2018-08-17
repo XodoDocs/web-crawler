@@ -1,11 +1,13 @@
 {
-  "name": "web-crawler",
+  "name": "@pdftron/web-crawler",
   "version": "0.0.1",
   "description": "Web crawling using Puppeteer",
-  "main": "src/index.js",
+  "main": "dist/web-crawler.js",
   "scripts": {
     "test": "babel-node test/index.js",
-    "start": "babel-node src/index.js"
+    "start": "babel-node src/index.js",
+    "publish-npm": "npm run build && npm publish --access private",
+    "build": "npx webpack"
   },
   "repository": {
     "type": "git",

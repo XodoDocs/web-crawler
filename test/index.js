@@ -1,4 +1,4 @@
-const Crawler = require('../src/index');
+const Crawler = require('../dist/web-crawler');
 
 const c = new Crawler({ debug: false });
 

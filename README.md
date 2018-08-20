@@ -32,8 +32,8 @@ A function that determines if a URL should be fetched or not.
 Attach an event listener to the instance. 
 
 - `key` <[string]> type of event listener to attach. Can be one of:
-  - `done` Called when the process is done. `callback` is passed a dump of data from the crawl.
-  - `fetched` Called when a page is fully fetched. `callback` is passed an object with `html` and `url`.
+  - `done` Called when the process is done. `callback` is passed an array of urls found.
+  - `fetched` Called when a page is fully fetched. `callback` is passed an object with `html` and `url`. This is the only way to get the HTML from a page using the crawler.
   - `foundURL` Called when a new URL is found and added to the queue. `callback` is passed the URL.
 
 

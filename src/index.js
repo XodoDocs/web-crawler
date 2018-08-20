@@ -51,18 +51,27 @@ class Crawler {
       console.log(`Fetching ${url}`);
     }
 
-    this._pageCount++;
-
     const page = await this._browser.newPage();
 
-    await page.goto(url, { waitUntil: 'networkidle2' });
+    try {
+      const p = page.waitForNavigation({ waitUntil: 'networkidle0' });
+      await page.goto(url);
+      await p;
+    } catch (e) {
+      if (this._debug) {
+        console.log(`ERROR: ${e}`);
+      }
 
+      this._flush();
+      return;
+    }
+    
     const hrefs = await this._findLinks(page);
 
     let html = null;
 
     // we only need the HTML if the user is requesting it in a callback
-    if (this._callbacks.done || this._callbacks.fetched) {
+    if (this._callbacks.fetched) {
       html = await page.content();
     }
     
@@ -72,7 +81,7 @@ class Crawler {
       this._callbacks.fetched(o);
     }
 
-    this._data[url] = o;
+    this._data[url] = true;
 
     hrefs.forEach(href => {
       this.queue(href)
@@ -98,18 +107,20 @@ class Crawler {
     }
 
     for (let i = 0; i < diff; i++) {
+      this._pageCount++;
       const url = this._queue.pop();
       this._seen.push(url);
-      this._fetchPage(url);
+      setTimeout(() => {
+        this._fetchPage(url);
+      }, 0)
     }
   }
 
-  _done = () => {
-
-    this._browser.close();
+  _done = async () => {
+    await this._browser.close();
 
     if (this._callbacks.done) {
-      this._callbacks.done(this._data);
+      this._callbacks.done(Object.keys(this._data));
     }
   }
 
@@ -152,7 +163,7 @@ class Crawler {
     if (this._browser) return;
     if (this._queue.length === 0) return;
 
-    this._browser = await Puppeteer.launch();
+    this._browser = await Puppeteer.launch({ args: ['--disable-dev-shm-usage', '--no-sandbox',  '--disable-setuid-sandbox'] });
 
     // call a callback for any URLs queued before the callback is set
     this._queue.forEach(url => {

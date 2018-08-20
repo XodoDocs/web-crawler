@@ -74,7 +74,9 @@ class Crawler {
 
     this._data[url] = o;
 
-    hrefs.forEach(href => this.queue(href));
+    hrefs.forEach(href => {
+      this.queue(href)
+    });
 
     await page.close();
 
@@ -83,11 +85,6 @@ class Crawler {
   }
   
   _flush = () => {
-    // if (this._queue.length === 0) {
-    //   this._done();
-    //   return;
-    // }
-
     let diff = this._maxConnections - this._pageCount;
 
     if (diff > this._queue.length) {
@@ -144,6 +141,10 @@ class Crawler {
       }
 
       this._queue.push(url);
+    } else {
+      if (this._debug) {
+        console.log(`Rejecting ${url}`);
+      }
     }
   }
 
@@ -152,6 +153,14 @@ class Crawler {
     if (this._queue.length === 0) return;
 
     this._browser = await Puppeteer.launch();
+
+    // call a callback for any URLs queued before the callback is set
+    this._queue.forEach(url => {
+      if (this._callbacks.foundURL) {
+        this._callbacks.foundURL(url);
+      }
+    })
+
     this._flush();
   }
 }

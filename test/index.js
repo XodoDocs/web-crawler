@@ -29,9 +29,8 @@ describe('web-crawler', () => {
     const c = new Crawler();
     c.queue('http://localhost:3000/test/html/index.html');
     c.on('done', (data) => {
-      const keys = Object.keys(data);
-      assert.equal(keys.length, 4);
-      assert(keys.indexOf('http://localhost:3000/test/html/end.html') > -1);
+      assert.equal(data.length, 4);
+      assert(data.indexOf('http://localhost:3000/test/html/end.html') > -1);
       done();
     })
     c.start();
@@ -41,9 +40,8 @@ describe('web-crawler', () => {
     const c = new Crawler();
     c.queue('http://localhost:3000/test/html/index.html');
     c.on('done', (data) => {
-      const keys = Object.keys(data);
-      assert.equal(keys.length, 3);
-      assert(keys.indexOf('http://localhost:3000/test/html/end.html') === -1);
+      assert.equal(data.length, 3);
+      assert(data.indexOf('http://localhost:3000/test/html/end.html') === -1);
       done();
     });
     c.shouldFetch((url) => {
@@ -59,7 +57,6 @@ describe('web-crawler', () => {
     const c = new Crawler();
     c.queue('http://localhost:3000/test/html/index.html');
     c.on('done', (data) => {
-      const keys = Object.keys(data);
       assert.equal(count, 4);
       done();
     });
@@ -97,8 +94,7 @@ describe('web-crawler', () => {
     const c = new Crawler();
     c.queue('http://localhost:3000/test/html/end.html');
     c.on('done', (data) => {
-      const keys = Object.keys(data);
-      assert.equal(keys.length, 1);
+      assert.equal(data.length, 1);
       done();
     });
     

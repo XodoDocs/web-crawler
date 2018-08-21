@@ -17,6 +17,8 @@ class Crawler {
     this._seen = []
     this._pageCount = 0;
 
+    this._calledDone = false;
+
     this._shouldFetch = () => true;
   }
 
@@ -117,11 +119,14 @@ class Crawler {
   }
 
   _done = async () => {
+    if (this._calledDone) return;
     await this._browser.close();
 
     if (this._callbacks.done) {
       this._callbacks.done(Object.keys(this._data));
     }
+
+    this._calledDone = true;
   }
 
   _filterURL = (url) => {

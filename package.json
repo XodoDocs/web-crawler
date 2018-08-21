@@ -1,6 +1,6 @@
 {
   "name": "@pdftron/web-crawler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Web crawling using Puppeteer",
   "main": "dist/web-crawler.js",
   "scripts": {

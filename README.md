@@ -34,7 +34,8 @@ Attach an event listener to the instance.
 - `key` <[string]> type of event listener to attach. Can be one of:
   - `done` Called when the process is done. `callback` is passed an array of urls found.
   - `fetched` Called when a page is fully fetched. `callback` is passed an object with `html` and `url`. This is the only way to get the HTML from a page using the crawler.
-  - `foundURL` Called when a new URL is found and added to the queue. `callback` is passed the URL.
+  - `foundURL` Called when a new URL is found and added to the queue. `callback` is passed the URL and the page the URL was found on.
+  - `loadError` Called when a page can not be fetched. Parameters are the url that cant be fetched, the page the url was found on, and the status code
 
 
 ## Example
@@ -50,8 +51,8 @@ c.shouldFetch((url) => {
   return url.indexOf('/documentation') > -1 && url.indexOf('web/guides') > -1;
 })
 
-c.on('foundURL', (url) => {
-  console.log(url);
+c.on('foundURL', (url, foundOn) => {
+  console.log(`${url} was found on ${foundOn}`);
 })
 
 c.on('done', (data) => {

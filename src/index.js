@@ -1,5 +1,6 @@
 const Puppeteer = require('puppeteer');
 
+
 class Crawler {
 
   constructor(options = {}) {
@@ -9,7 +10,8 @@ class Crawler {
     this._callbacks = {
       done: null,
       fetched: null,
-      foundURL: null
+      foundURL: null,
+      notFound: null
     };
 
     this._data = {};
@@ -33,6 +35,9 @@ class Crawler {
       case 'foundURL':
         this._callbacks.foundURL = func;
         break;
+      case 'loadError':
+        this._callbacks.notFound = func;
+        break;
     }
   }
 
@@ -41,33 +46,60 @@ class Crawler {
   }
 
   _findLinks = async (page) => {
-    const hrefs = await page.$$eval('a', hrefs => hrefs.map((a) => {
-      return a.href;
-    }));
-    return hrefs.map(h => this._filterURL(h));
+    try {
+      const hrefs = await page.$$eval('a', hrefs => hrefs.map((a) => {
+        return a.href;
+      }));
+      return hrefs.map(h => this._filterURL(h));
+    } catch (e) {
+      return [];
+    }
   }
 
-  _fetchPage = async (url) => {
+  _fetchPage = async (url, foundFrom) => {
 
     if (this._debug) {
       console.log(`Fetching ${url}`);
     }
 
     const page = await this._browser.newPage();
+    let error = false;
+
+    page.on("response", response => {
+      const status = response.status();
+      if (status < 200 || status >= 302) {
+        error = status;
+      }
+    });
 
     try {
-      const p = page.waitForNavigation({ waitUntil: 'networkidle0' });
-      await page.goto(url);
+      const p = page.waitForNavigation({waituntil: 'domcontentloaded'});
+      await page.goto(url, {timeout: 30000}).catch((e) => {
+        error = 'timeout';
+        return;
+      });
       await p;
+      
     } catch (e) {
-      if (this._debug) {
-        console.log(`ERROR: ${e}`);
-      }
-
-      this._flush();
-      return;
+      error = 'unknown';
     }
     
+    if (error) {
+      if (this._debug) {
+        console.log(`ERROR: ${error}`);
+      }
+
+      if ( typeof error === 'number' && this._callbacks.notFound) {
+        this._callbacks.notFound(url, foundFrom, error);
+      }
+
+      await page.close();
+
+      this._flush();
+      this._pageCount--;
+      return;
+    }
+
     const hrefs = await this._findLinks(page);
 
     let html = null;
@@ -86,7 +118,7 @@ class Crawler {
     this._data[url] = true;
 
     hrefs.forEach(href => {
-      this.queue(href)
+      this.queue(href, url)
     });
 
     await page.close();
@@ -102,7 +134,6 @@ class Crawler {
       diff = this._queue.length;
     }
 
-
     if (this._queue.length === 0 && this._pageCount === 0) {
       this._done();
       return;
@@ -110,10 +141,10 @@ class Crawler {
 
     for (let i = 0; i < diff; i++) {
       this._pageCount++;
-      const url = this._queue.pop();
+      const { url, foundFrom } = this._queue.pop();
       this._seen.push(url);
       setTimeout(() => {
-        this._fetchPage(url);
+        this._fetchPage(url, foundFrom);
       }, 0)
     }
   }
@@ -141,9 +172,9 @@ class Crawler {
 
   _getFetchedURLs = () => Object.keys(this._data);
 
-  queue = (url) => {
+  queue = (url, foundFrom) => {
     if (
-      this._queue.indexOf(url) === -1 &&
+      this._queue.findIndex(({ url: queueUrl }) => url.trim() === queueUrl.trim() ) === -1 &&
       this._seen.indexOf(url) === -1 &&
       this._getFetchedURLs().indexOf(url) === -1 &&
       this._shouldFetch(url)
@@ -153,10 +184,10 @@ class Crawler {
       }
 
       if (this._callbacks.foundURL) {
-        this._callbacks.foundURL(url);
+        this._callbacks.foundURL(url, foundFrom);
       }
 
-      this._queue.push(url);
+      this._queue.push({ url, foundFrom });
     } else {
       if (this._debug) {
         console.log(`Rejecting ${url}`);
@@ -171,9 +202,9 @@ class Crawler {
     this._browser = await Puppeteer.launch({ args: ['--disable-dev-shm-usage', '--no-sandbox',  '--disable-setuid-sandbox'] });
 
     // call a callback for any URLs queued before the callback is set
-    this._queue.forEach(url => {
+    this._queue.forEach(({ url }) => {
       if (this._callbacks.foundURL) {
-        this._callbacks.foundURL(url);
+        this._callbacks.foundURL(url, url);
       }
     })
 

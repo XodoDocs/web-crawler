@@ -11,8 +11,6 @@ describe('web-crawler', () => {
   let server = null;
   before(() => {
     server = http.createServer((request, response) => {
-      // You pass two more arguments for config and middleware
-      // More details here: https://github.com/zeit/serve-handler#options
       return handler(request, response);
     })
 
@@ -81,7 +79,7 @@ describe('web-crawler', () => {
       done();
     });
     
-    c.on('foundURL', (url) => {
+    c.on('foundURL', (url, from) => {
       assert(url);
       count++;
     });

@@ -1,6 +1,6 @@
 {
   "name": "@pdftron/web-crawler",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Web crawling using Puppeteer",
   "main": "dist/web-crawler.js",
   "scripts": {
@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/XodoDocs/web-crawler#readme",
   "dependencies": {
-    "puppeteer": "^1.7.0"
+    "puppeteer": "^1.18.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
